@@ -11,52 +11,41 @@
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <ompl/geometric/planners/rrt/pRRT.h>
 #include <ompl/geometric/planners/est/EST.h>
-
+#include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/base/PlannerData.h>
+#include <boost/bind.hpp>
 #include <cmath>
 #include <iostream>
 #include <fstream>
 #include <ostream>
-#include <vector>
-
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/opencv.hpp>
-
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
-
-using namespace std;
 
 typedef struct {
   double xrange[2];
   double yrange[2];
 } RANGE;
 
-typedef struct
-{
-    double x;
-    double y;
-}pos;
-
 class Planning{
   public:
-    Planning(std::vector<pos> &v,int n);
-    void init(std::vector<pos> &v,int n);
-    void CreateCircle();
-    //void PlannerSelector();
+    Planning(std::string fileName);
+    void initFromFile(std::string fileName);
+    void CreateCube();
+    void PlannerSelector();
+    void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
     bool isStateValid(const ob::State *state);
     void planWithSimpleSetup();
-    void drawPath(std::string fileName);
-    void output();
+    void output_plt(std::string plt_output);
+    int OpenGnuplot();
 
   private:
-    double* xc;
-    double* yc;
-    double* r;
+    double* xMin;
+    double* xMax;
+    double* yMin;
+    double* yMax;
     // Number of obstacles in space.
     int numObstacles;
     // Start position in space
