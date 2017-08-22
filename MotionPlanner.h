@@ -10,59 +10,85 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <ompl/geometric/planners/rrt/pRRT.h>
-#include <ompl/geometric/planners/est/EST.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
+#include <ompl/geometric/planners/est/EST.h>
 
+
+#include "ompl/base/StateSpace.h"
+#include "ompl/base/spaces/RealVectorStateSpace.h"
+#include "ompl/base/spaces/SO2StateSpace.h"
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/base/PlannerData.h>
-#include <boost/bind.hpp>
+
 #include <cmath>
 #include <iostream>
 #include <fstream>
 #include <ostream>
+#include <vector>
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-typedef struct {
-  double xrange[2];
-  double yrange[2];
-} RANGE;
+using namespace std;
+
+typedef struct{
+    double x;
+    double y;
+}pos;
+
+typedef struct{
+    int x;
+    int y;
+}pair;
+
+typedef struct{
+    pair start;
+    pair final;
+    int step_size;
+    int bias_param;
+    int max_iteration;
+    int selector;
+}Path_params;
 
 class Planning{
   public:
-    Planning(std::string fileName);
-    void initFromFile(std::string fileName);
-    void CreateCube();
-    void PlannerSelector();
-    void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
+    Planning(vector<pos> &v, int n, Path_params path_params);
+    void init(vector<pos> &v, int n, Path_params path_params);
     bool isStateValid(const ob::State *state);
     void planWithSimpleSetup();
-    void output_plt(std::string plt_output);
-    int OpenGnuplot();
-
+    vector<pair> getReals();
   private:
-    double* xMin;
-    double* xMax;
-    double* yMin;
-    double* yMax;
+    double* solvedPath;
+    double* xc;
+    double* yc;
+    double* r;
+
     // Number of obstacles in space.
     int numObstacles;
+
     // Start position in space
     double xStart;
     double yStart;
+
     // Goal position in space
     double xGoal;
     double yGoal;
-    // Max. distance toward each sampled position we
-    // should grow our tree
-    double stepSize;
+
     // Boundaries of the space
     double xLeft;
     double xRight;
     double yTop;
     double yBottom;
 
+     // Selector for path planner
     int selector;
+
+    // all answer coordinates
+    vector<pair> reals;
+
+    // path planner's params
+    int step_size;
+    int bias_param;
+    int max_iteration;
 };
 #endif

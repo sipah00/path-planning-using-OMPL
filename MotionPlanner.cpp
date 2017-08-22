@@ -1,120 +1,62 @@
 #include "MotionPlanner.h"
+
 using namespace std;
 
-Planning::Planning(std::string fileName){
-  initFromFile(fileName);
-  CreateCube();
-  PlannerSelector();
+Planning::Planning(vector<pos> &v, int n, Path_params path_params){
+  init(v,n,path_params);
 }
 
+void Planning::init(vector<pos> &v, int n, Path_params path_params){
+  // Start position in space
+  xStart = path_params.start.x; 
+  yStart = path_params.start.y;
 
-void Planning::initFromFile(std::string fileName)
-{
-  std::ifstream input(fileName.c_str());
-  if (!input) {
-    std::cerr << "FILE READ ERROR" << std::endl;
-    std::exit(1);
-  }
-  input >> xLeft >> xRight >> yBottom >> yTop >> numObstacles;
+  // Goal position in space
+  xGoal = path_params.final.x;
+  yGoal = path_params.final.y;
 
-  xMin = new double[numObstacles];
-  xMax = new double[numObstacles];
-  yMin = new double[numObstacles];
-  yMax = new double[numObstacles];
+  // Max. distance toward each sampled position we should grow our tree
+  step_size = path_params.step_size;
+  bias_param = path_params.bias_param;
+  max_iteration = path_params.max_iteration;
 
-  for (int i = 0; i < numObstacles; ++i){
-    input >> xMin[i] >> xMax[i] >> yMin[i] >> yMax[i];
-  }
+  // Boundaries of the space 
+  xLeft = 0.0;  //dummy values
+  xRight = 800.0;
+  yTop = 800.0;
+  yBottom = 0.0;
 
-  input >> xStart >> yStart >> xGoal >> yGoal >> stepSize;
+  // Choose your path planner
+  selector = path_params.selector;
 
-  input.close();
-}
+  // Number of Obstacles including our bots lol!
+  numObstacles = n;
+  xc = new double[numObstacles];
+  yc = new double[numObstacles];
 
-
-void Planning::CreateCube()
-{
-  RANGE obstacle;
-  ofstream cube("./plot/obstacle.dat");
-  ofstream plot_start("./plot/start.dat");
-  ofstream plot_goal("./plot/goal.dat");
-
-  plot_start << xStart << "\t" << yStart << std::endl;
-  plot_goal << xGoal << "\t" << yGoal << std::endl;
-
-  for(int ob = 0; ob < numObstacles; ++ob){
-    obstacle.xrange[0] = xMin[ob]; obstacle.yrange[0] = yMin[ob];
-    obstacle.xrange[1] = xMax[ob]; obstacle.yrange[1] = yMax[ob];
-    for (int i = 0; i < 2; ++i){
-      cube << obstacle.xrange[0] << "\t" << obstacle.yrange[0] << "\t" << std::endl;
-      cube << obstacle.xrange[1] << "\t" << obstacle.yrange[0] << "\t" << std::endl;
-      cube << obstacle.xrange[1] << "\t" << obstacle.yrange[1] << "\t" << std::endl;
-      cube << obstacle.xrange[0] << "\t" << obstacle.yrange[1] << "\t" << std::endl;
-      cube << obstacle.xrange[0] << "\t" << obstacle.yrange[0] << "\t" << std::endl;
-      cube << "\n\n";
-    }
+  for(int i = 0; i<n; i++){
+    xc[i] = v[i].x;
+    yc[i] = v[i].y;
   }
 }
 
-
-void Planning::PlannerSelector()
-{
-  std::string plan[10] = {"PRM",    "RRT",     "RRTConnect", "RRTstar",
-                         "LBTRRT", "LazyRRT", "TRRT",       "pRRT",
-                         "EST","InformedRRTstar"};
-    printf("PRM             1\n");
-    printf("RRT             2\n");
-    printf("RRTConnect      3\n");
-    printf("RRTstar         4\n");
-    printf("LBTRRT          5\n");
-    printf("LazyRRT         6\n");
-    printf("TRRT            7\n");
-    printf("pRRT            8\n");
-    printf("EST             9\n");
-    printf("InformedRRTstar 10\n");
-
-    cout << "choose your planner" <<endl;
-    cin >> selector;
-    if(!(1 <= selector && selector <= 10)){
-      cout<<"Invalid choice!"<<endl;
-      exit(0);
-    }
-    cout<<"Selected Planner is "<<plan[selector-1]<<endl;
-}
-
-
-
-bool Planning::isStateValid(const ob::State *state)
-{
+bool Planning::isStateValid(const ob::State *state){
   const ob::SE2StateSpace::StateType *state_2d= state->as<ob::SE2StateSpace::StateType>();
   const double &x(state_2d->getX()), &y(state_2d->getY());
 
   for (int i = 0; i < numObstacles; ++i){
-    if (xMin[i] <= x && x <= xMax[i] && yMin[i] <= y && y <= yMax[i]){
+    if (sqrt(pow((xc[i]-x),2)+pow((yc[i]-y),2)) <= BOT_RADIUS){
       return false;
     }
   }
-
   return true;
 }
 
-
-// Print a vertex to file
-void Planning::printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex)
-{
-  std::vector<double> reals;
-  if(vertex!=ob::PlannerData::NO_VERTEX)
-  {
-    space->copyToReals(reals, vertex.getState());// Copy all the real values from a state source to the array reals using getValueAddressAtLocation()
-    for(size_t j = 0; j < reals.size(); ++j){
-      os << " " << reals[j];
-    }
-  }
+void Planning::getReals(){
+  return reals;
 }
 
-
-void Planning::planWithSimpleSetup()
-{
+void Planning::planWithSimpleSetup(){
   // Construct the state space where we are planning
   ob::StateSpacePtr space(new ob::SE2StateSpace());
 
@@ -134,7 +76,7 @@ void Planning::planWithSimpleSetup()
   // Setup Start and Goal
   ob::ScopedState<ob::SE2StateSpace> start(space);
   start->setXY(xStart,yStart);
- // cout << "start: "; start.print(cout);
+  //cout << "start: "; start.print(cout);
 
   ob::ScopedState<ob::SE2StateSpace> goal(space);
   goal->setXY(xGoal,yGoal);
@@ -169,7 +111,7 @@ void Planning::planWithSimpleSetup()
   }else if(selector == 9){
     ob::PlannerPtr planner(new og::EST(ss.getSpaceInformation()));
     ss.setPlanner(planner);
-  }else if(selector == 10){ 
+  }else if(selector == 10){
     ob::PlannerPtr planner(new og::InformedRRTstar(ss.getSpaceInformation()));
     ss.setPlanner(planner);
   }
@@ -177,100 +119,38 @@ void Planning::planWithSimpleSetup()
   cout << "----------------" << endl;
 
   // Execute the planning algorithm
-  ob::PlannerStatus solved = ss.solve(5.0);
+  ob::PlannerStatus solved = ss.solve(5);
 
   // If we have a solution,
   if (solved)
   {
-    // Print the solution path (that is not simplified yet) to a file
-    std::ofstream ofs0("./plot/path0.dat");
-    ss.getSolutionPath().printAsMatrix(ofs0);
+    ss.getSolutionPath();
 
     // Simplify the solution
     ss.simplifySolution();
     cout << "----------------" << endl;
     cout << "Found solution:" << endl;
-    // Print the solution path to screen
-    //ss.getSolutionPath().print(cout);
 
-    // Print the solution path to a file
-    std::ofstream ofs("./plot/path.dat");
-    ss.getSolutionPath().printAsMatrix(ofs);
-
-    // Get the planner data to visualize the vertices and the edges
-    ob::PlannerData pdat(ss.getSpaceInformation());
-    ss.getPlannerData(pdat);
-
-    // Print the vertices to file
-    std::ofstream ofs_v("./plot/vertices.dat");
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
-      printEdge(ofs_v, ss.getStateSpace(), pdat.getVertex(i));
-      ofs_v<<endl;
+    // const base::StateSpace *space(si_->getStateSpace().get());
+    // std::vector<double> reals;
+    // for(auto state:states_){
+    //   space->copyToReals(reals,state);
+    //   solvedPath.push_back(reals);
+    // }
+    og::PathGeometric &p = ss.getSolutionPath();
+    p.interpolate();
+    reals.clear();
+    for(std::size_t i = 0; i<p.getStateCount(); i++){
+      int x = min(xRight, (int)p.getState(i)->as<ob::SE2StateSpace::StateType>()->values[0]);
+      int y = min(yBottom, (int)p.getState(i)->as<ob::SE2StateSpace::StateType>()->values[1]);
+      pair pos;
+      pos.x = x, pos.y = y;
+      reals.push_back(pos);
     }
-
-    // Print the edges to file
-    std::ofstream ofs_e("./plot/edges.dat");
-    std::vector<unsigned int> edge_list;
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
-      unsigned int n_edge= pdat.getEdges(i,edge_list);
-      for(unsigned int i2(0); i2<n_edge; ++i2)
-      {
-        printEdge(ofs_e, ss.getStateSpace(), pdat.getVertex(i));
-        ofs_e<<endl;
-        printEdge(ofs_e, ss.getStateSpace(), pdat.getVertex(edge_list[i2]));
-        ofs_e<<endl;
-        ofs_e<<endl<<endl;
-      }
-    }
+    //Print the solution path to a file
+    //std::ofstream ofs("path.dat");
+    //ss.getSolutionPath().printAsMatrix(ofs);
   }
   else
     cout << "No solution found" << endl;
-}
-
-
-void Planning::output_plt(std::string plt_output)
-{
-  std::ofstream plt(plt_output);
-
-  plt << "#set terminal postscript eps color enhanced 20" << endl;
-  plt << "#set output \"out.eps\"" << endl;
-
-  plt << "set xlabel \"x\""<< endl;
-  plt << "set ylabel \"y\"" << endl;
-  plt << "set xrange [" << xLeft << ":" << xRight << "]" << endl;
-  plt << "set yrange [" << yBottom << ":" << yTop << "]" << endl;
-  plt << "set key outside" << endl;
-  plt << "set key top right" << endl;
-  plt << "set size square" << endl;
-
-  plt << "plot \"obstacle.dat\" using 1:2 with filledcurves lt rgb \"#ff0033\" fill solid 0.5 notitle,\\" << endl;
-  plt << "\"start.dat\" using 1:2 with points pt 7 ps 1.5 lt rgb \"#ff9900\" title \"Start\",\\" << endl;
-  plt << "\"goal.dat\" using 1:2 with points pt 7 ps 1.5 lt rgb \"#15BB15\" title \"Goal\",\\" << endl;
-  plt << "\"edges.dat\" using 1:2 with lines lt 1 lc rgb \"#728470\" lw 0.5 title \"edges\",\\" << endl;
-  if(selector == 1){
-    plt << "\"vertices.dat\" using 1:2 with points pt 7 ps 1 lt rgb \"#5BBC77\" title \"Vertices\",\\" << endl;
-  }
-  plt << "\"path.dat\" using 1:2 with lines lt 1 lc rgb \"#191970\" lw 2 title \"Path\",\\" << endl;
-  plt << "\"path0.dat\" using 1:2 with lines lt 1 lc rgb \"#ff4500\" lw 2 title \"Path0\"" << endl;
-}
-
-
-//http://www-sens.sys.es.osaka-u.ac.jp/wakate/tutorial/group3/gnuplot/
-int Planning::OpenGnuplot()
-{
-  output_plt("./plot/plot.plt");
-
-  FILE *fp = popen("cd ./plot && gnuplot -persist", "w");
-  if (fp == NULL){
-    return -1;
-  }
-  fputs("set mouse\n", fp);
-  fputs("load \"plot.plt\"\n", fp);
-
-  fflush(fp);
-  cin.get();
-  pclose(fp);
-  return 0;
 }
