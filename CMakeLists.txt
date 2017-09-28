@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(listener)
 
+ADD_DEFINITIONS(
+  -std=c++11
+  )
+
 ## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -17,8 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   OpenCV
   OMPL
 )
-#find_package(OMPL REQUIRED)
-#find_package(OpenCV REQUIRED)
+find_package(OMPL REQUIRED)
+find_package(OpenCV REQUIRED)
 #find_package(krssg_ssl_msgs)
 
 ## Declare ROS messages and services

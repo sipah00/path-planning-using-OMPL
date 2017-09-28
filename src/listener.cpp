@@ -33,12 +33,17 @@ void Callback(const krssg_ssl_msgs::BeliefState::ConstPtr& msg)
   planning.planWithSimpleSetup();
   planning.drawPath();
   planning.output();
+
+  planning.planSimple();
+  planning.plan(0, 0, 800, 800);
+  planning.recordSolution();
+  planning.drw();
 }
 
 
 int main(int argc, char **argv)
 {
-  
+
   ros::init(argc, argv, "listener");
 
   ros::NodeHandle n;
@@ -68,4 +73,3 @@ int main(int argc, char **argv)
 
   return 0;
 }
-

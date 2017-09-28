@@ -11,7 +11,7 @@
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <ompl/geometric/planners/rrt/pRRT.h>
 #include <ompl/geometric/planners/est/EST.h>
-
+#include <boost/bind.hpp>
 #include "ompl/base/StateSpace.h"
 #include "ompl/base/spaces/RealVectorStateSpace.h"
 #include "ompl/base/spaces/SO2StateSpace.h"
@@ -51,10 +51,15 @@ class Planning{
     void init(std::vector<pos> &v,int n);
     void CreateCircle();
     //void PlannerSelector();
-    bool isStateValid(const ob::State *state);
+    bool isStateValid(const ob::State *state) const;
     void planWithSimpleSetup();
     void drawPath();
     void output();
+    void planSimple();
+    bool plan(unsigned int start_row, unsigned int start_col, unsigned int goal_row, unsigned int goal_col);
+    void recordSolution();
+    bool isStateValid1(const ob::State *state);
+    void drw();
 
   private:
     double* xc;
@@ -76,7 +81,12 @@ class Planning{
     double xRight;
     double yTop;
     double yBottom;
-
     int selector;
+
+
+    int maxWidth_;
+    int maxHeight_;
+    og::SimpleSetupPtr ss_;
+
 };
 #endif
