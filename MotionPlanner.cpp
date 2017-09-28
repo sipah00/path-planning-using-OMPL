@@ -52,7 +52,7 @@ bool Planning::isStateValid(const ob::State *state){
   return true;
 }
 
-void Planning::getReals(){
+vector<pair> Planning::getReals(){
   return reals;
 }
 

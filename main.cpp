@@ -13,14 +13,14 @@ path_params = Path_params();
 
 
 void guiCallback(const krssg_ssl_msgs::Path::ConstPtr& point_SF){
-	path_params.start.x = point_SF.s_x;
-	path_params.start.y = point_SF.s_y;
-	path_params.final.x = point_SF.f_x;
-	path_params.final.x = point_SF.f_y;
-	path_params.step_size = point_SF.step_size;
-	path_params.bias_param = point_SF.bias_param;
-	path_params.max_iteration = point_SF.max_iteration;
-	path_params.selector = point_SF.selector;
+	path_params.start.x = point_SF->s_x;
+	path_params.start.y = point_SF->s_y;
+	path_params.final.x = point_SF->f_x;
+	path_params.final.x = point_SF->f_y;
+	path_params.step_size = point_SF->step_size;
+	path_params.bias_param = point_SF->bias_param;
+	path_params.max_iteration = point_SF->max_iteration;
+	path_params.selector = point_SF->selector;
 }
 void beliefStateCallback(const krssg_ssl_msgs::BeliefState::ConstPtr& msg){
 
