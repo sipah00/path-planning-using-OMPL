@@ -19,6 +19,7 @@ typedef struct
 
 
 Mat img(800,800,CV_8UC3,Scalar(0,255,0));
+Mat img1(800,800,CV_8UC3,Scalar(0,255,0));
 
 std::vector<point> vect,vect1;
 
@@ -32,7 +33,7 @@ void Planning::init(vector<pos> &v,int n)
 {
 
   xStart=0.0;
-  yStart=0.0;
+  yStart=300.0;
   // Goal position in space
   xGoal=800.0;
   yGoal=500.0;
@@ -98,7 +99,7 @@ bool Planning::plan(unsigned int start_row, unsigned int start_col, unsigned int
   goal[1] = goal_col;
   ss_->setStartAndGoalStates(start, goal);
   // generate a few solutions; all will be added to the goal;
-  for (int i = 0 ; i < 10 ; ++i){
+  for (int i = 0 ; i < 1 ; ++i){
     if (ss_->getPlanner())
       ss_->getPlanner()->clear();
     ss_->solve();
@@ -133,7 +134,6 @@ void Planning::recordSolution(){
 }
 
 void Planning::drw(){
-  Mat img1(800,800,CV_8UC3,Scalar(0,255,0));
   circle(img1,Point(xStart,yStart),5,Scalar(250,0,0),CV_FILLED,8,0);
   circle(img1,Point(xGoal,yGoal),5,Scalar(250,0,0),CV_FILLED,8,0);
   for(int i=0;i<numObstacles;i++)
@@ -146,7 +146,7 @@ void Planning::drw(){
   imshow("OMPL1",img1);
   waitKey(1);
   //img1.release();
-  img1=Scalar(0,0,0);
+  img1=Scalar(0,255,0);
 
 }
 
@@ -173,6 +173,7 @@ void Planning::planSimple(){
   ss_->setStateValidityChecker([this](const ob::State *state) {return isStateValid(state);});
   space->setup();
   ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
+  ss_->setPlanner(make_shared<og::LazyRRT>(ss_->getSpaceInformation()));
 }
 
 

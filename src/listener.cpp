@@ -30,12 +30,12 @@ void Callback(const krssg_ssl_msgs::BeliefState::ConstPtr& msg)
   }
 
   Planning planning(v,v.size());
-  planning.planWithSimpleSetup();
-  planning.drawPath();
-  planning.output();
+  //planning.planWithSimpleSetup();
+  //planning.drawPath();
+  //planning.output();
 
   planning.planSimple();
-  planning.plan(0, 0, 800, 800);
+  planning.plan(0, 100, 800, 800);
   planning.recordSolution();
   planning.drw();
 }
